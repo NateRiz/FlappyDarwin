@@ -71,6 +71,7 @@ class FlappyDarwin:
         self.spawn_pipe()
         for i in reversed(range(len(self.pipes))):
             self.pipes[i].top.x -= self.pipe_speed
+            self.pipes[i].bot.x -= self.pipe_speed
             if self.pipes[i].top.right < 0:
                 del self.pipes[i]
 
@@ -102,6 +103,7 @@ class FlappyDarwin:
         self.last_jump_time = time()
         self.game_start_time = time()
         self.game_state = State.READY
+        self.velocity = self.VELOCITY_INITIAL
 
     def check_dead(self):
         if self.bird.bottom >= self.HEIGHT or self.bird.top <= 0:

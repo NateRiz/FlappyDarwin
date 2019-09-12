@@ -5,6 +5,7 @@ from PyGP.Selection import tournament
 from PyGP.Mutation import mutate
 from threading import Thread
 from time import sleep,time
+import CustomInstructions as c_inst
 
 
 def main():
@@ -23,9 +24,11 @@ def main():
     inst_lib.add_inst("Assign", inst.assign, False)
     inst_lib.add_inst("Copy", inst.copy, False)
     inst_lib.add_inst("While", inst.while_, True)
-    inst_lib.add_inst("For", inst.for_, True)
-    inst_lib.add_inst("Jump", lambda _, __: game.jump(), False)
-    inst_lib.add_inst("Sleep", lambda _, __: sleep(.25), False)
+    inst_lib.add_inst("Close", inst.close, False)
+    inst_lib.add_inst("Jump", lambda _, __: c_inst.jump(game), False)
+    inst_lib.add_inst("Wait", lambda _, __: c_inst.wait(), False)
+    #inst_lib.add_inst("For", inst.for_, True)
+
 
     hws = [Hardware(inst_lib) for _ in range(10)]
     [hw.generate_program() for hw in hws]
@@ -38,18 +41,18 @@ def test_hardware(hws, game):
     while not game.QUIT_SIGNAL:
         ticks = 0
         for hw in hws:
-
             game.restart()
 
             while not hw.EOP and not game.game_state == State.GAMEOVER:
                 hw.tick()
                 ticks += 1
                 if game.QUIT_SIGNAL: return
+
             hw.cache_fitness(time()-game.game_start_time)
             print([hw.fitness for hw in hws])
 
         hws = tournament(hws)
-        [mutate(hw, hw) for hw in hws]
+        [mutate(hw) for hw in hws]
 
 
 if __name__ == '__main__':
