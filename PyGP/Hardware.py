@@ -27,7 +27,7 @@ class Hardware:
         self.block_cache = 0
         self.cache_dirty = True
 
-        self.MAX_PROGRAM_LENGTH = 4
+        self.MAX_PROGRAM_LENGTH = 96
         self.MIN_PROGRAM_LENGTH = 1
 
     def reset(self):

@@ -104,7 +104,15 @@ def while_(hardware, args):
 def for_(hardware, args, increment):
     if args[0] < 0 or args[0] >= len(hardware.registers): return 2
     return abs(hardware.registers[args[0]] - increment) == 0
+
+def if_(hardware, args):
+    if args[0] < 0 or args[0] >= len(hardware.registers): return 2
+    if hardware.registers[args[0]] == 0:
+        return 2
+    return 0
 """
 
 def close(_, __):
     return 1
+
+

@@ -1,7 +1,7 @@
 from FlappyDarwin import FlappyDarwin, State
 from PyGP.Hardware import Hardware, InstructionLibrary
 import PyGP.Instructions as inst
-from PyGP.Selection import tournament
+from PyGP.Selection import *
 from PyGP.Mutation import mutate
 from threading import Thread
 from time import sleep,time
@@ -27,6 +27,9 @@ def main():
     inst_lib.add_inst("Close", inst.close, False)
     inst_lib.add_inst("Jump", lambda _, __: c_inst.jump(game), False)
     inst_lib.add_inst("Wait", lambda _, __: c_inst.wait(), False)
+    inst_lib.add_inst("BirdHeight", lambda hw,args: c_inst.get_bird_height(hw, args, game), False)
+    inst_lib.add_inst("GapTop", lambda hw, args: c_inst.get_gap_top(hw, args, game), False)
+    inst_lib.add_inst("GapBot", lambda hw, args: c_inst.get_gap_bot(hw, args, game), False)
     #inst_lib.add_inst("For", inst.for_, True)
 
 
@@ -38,6 +41,7 @@ def main():
     print("Thread 1 ended.")
 
 def test_hardware(hws, game):
+    best_fit = 0
     while not game.QUIT_SIGNAL:
         ticks = 0
         for hw in hws:
@@ -49,9 +53,13 @@ def test_hardware(hws, game):
                 if game.QUIT_SIGNAL: return
 
             hw.cache_fitness(time()-game.game_start_time)
-            print([hw.fitness for hw in hws])
+            if hw.fitness > best_fit:
+                best_fit = hw.fitness
+                print(hw)
+                print("Fit", hw.fitness)
+                print(list(zip(list(range(len(hw.registers))),hw.registers)))
 
-        hws = tournament(hws)
+        hws = elite(hws, 6)
         [mutate(hw) for hw in hws]
 
 
