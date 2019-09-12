@@ -10,6 +10,8 @@ def tournament(hws):
             next_gen.append(copy(a))
         else:
             next_gen.append(copy(b))
+    for i, hw in enumerate(next_gen):
+        hw.id = i
     return next_gen
 
 def elite(hws, k):
@@ -21,6 +23,9 @@ def elite(hws, k):
         hw = Hardware(inst_lib)
         hw.generate_program()
         next_gen.append(hw)
+
+    for i, hw in enumerate(next_gen):
+        hw.id = i
     return next_gen
 
 def copy(src: Hardware):

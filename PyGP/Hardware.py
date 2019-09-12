@@ -16,8 +16,9 @@ Warnings:
 --You must manually call RESET to update the cache when it is mutated
 """
 
+
 class Hardware:
-    def __init__(self, inst_lib):
+    def __init__(self, inst_lib, id=0):
         self.instructions = []  # The actual program : List of Instruction Objects
         self.IP = 0  # Instruction Pointer
         self.EOP = False  # have we reached the end of the program yet?
@@ -26,6 +27,7 @@ class Hardware:
         self.fitness = -1
         self.block_cache = 0
         self.cache_dirty = True
+        self.id = id  # For external use. Must handle uniqueness outside of this class.
 
         self.MAX_PROGRAM_LENGTH = 96
         self.MIN_PROGRAM_LENGTH = 1
@@ -87,7 +89,7 @@ class Hardware:
                 elif self.instructions[ip].is_block:
                     open_block -= 1
                     if open_block == 0:
-                        next_ip = ip #retest the while loop
+                        next_ip = ip  # retest the while loop
                         break
                 ip -= 1
 
@@ -133,9 +135,19 @@ class Hardware:
                 self.instructions.append(inst)
 
     def __str__(self):
-        newline = "\n"
-        return F"IP: {self.IP}\n{self.registers}\n{newline.join([str(i) for i in self.instructions])}"
+        ret = [str(self.IP), str(self.registers)]
+        first_block = False
+        tabs = 0
+        for i in self.instructions:
+            if i.name == "Close" and first_block:
+                tabs -= 1
+            ret.append("\t" * tabs + str(i))
+            if i.is_block:
+                tabs += 1
+                first_block = True
 
+
+        return "\n".join(ret)
 
 class InstructionLibrary:
     def __init__(self):
