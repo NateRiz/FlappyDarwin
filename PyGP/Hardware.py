@@ -136,15 +136,13 @@ class Hardware:
 
     def __str__(self):
         ret = [str(self.IP), str(self.registers)]
-        first_block = False
         tabs = 0
         for i in self.instructions:
-            if i.name == "Close" and first_block:
+            if i.name == "Close" and tabs>=1:
                 tabs -= 1
             ret.append("\t" * tabs + str(i))
             if i.is_block:
                 tabs += 1
-                first_block = True
 
         return "\n".join(ret)
 
