@@ -2,10 +2,10 @@ from random import random, choice, randint
 
 
 def mutate(hw):
-    INSERTION_RATE = 0.02
-    DELETION_RATE = 0.02
-    SWAP_RATE = 0.02
-    ARG_RATE = 0.02
+    INSERTION_RATE = 0.015
+    DELETION_RATE = 0.015
+    SWAP_RATE = 0.015
+    ARG_RATE = 0.015
     insts = list(hw.inst_lib.lib.values())
 
     i = 1

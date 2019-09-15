@@ -64,8 +64,8 @@ class Hardware:
         next_ip = -1
 
         if ip_next_state == IP_next_state.LOOP_END:
-            open_block = 0
-            ip = self.IP
+            open_block = 1
+            ip = self.IP + 1
             while ip < len(self.instructions):
                 if self.instructions[ip].name == "Close":
                     open_block -= 1
@@ -146,8 +146,8 @@ class Hardware:
                 tabs += 1
                 first_block = True
 
-
         return "\n".join(ret)
+
 
 class InstructionLibrary:
     def __init__(self):
@@ -169,9 +169,14 @@ class Instruction:
         self.__repr__ = self.__str__
         self.is_block = is_block
         self.STATES = [IP_next_state.NEXT, IP_next_state.LOOP_START, IP_next_state.LOOP_END]
+        self.increment = 0
 
     def run(self, hardware):
         state = self.callback(hardware, self.args)
+        if self.is_block:
+            self.increment += 1
+            if self.STATES[state] == IP_next_state.LOOP_END:
+                self.increment = 0
         return self.STATES[state]
 
     def __str__(self):

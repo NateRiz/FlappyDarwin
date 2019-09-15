@@ -107,17 +107,27 @@ def while_(hardware, args):
     if hardware.registers[args[0]] == 0:
         return 2
     return 0
-"""
-def for_(hardware, args, increment):
-    if args[0] < 0 or args[0] >= len(hardware.registers): return 2
-    return abs(hardware.registers[args[0]] - increment) == 0
 
-def if_(hardware, args):
+
+def for_(hardware, args):
     if args[0] < 0 or args[0] >= len(hardware.registers): return 2
-    if hardware.registers[args[0]] == 0:
+    inst = hardware.instructions[hardware.IP]
+    increment = inst.increment
+    if abs(hardware.registers[args[0]]) - increment <= 0:
         return 2
     return 0
-"""
+
+
+def if_(hardware, args):  # Not a normal conditional. Can be broken out of with 'break'
+    if args[0] < 0 or args[0] >= len(hardware.registers): return 2
+    inst = hardware.instructions[hardware.IP]
+    increment = inst.increment
+    if hardware.registers[args[0]] == 0 or increment != 0:
+        return 2
+    return 0
+
+def break_(_, __):
+    return 2
 
 def close(_, __):
     return 1

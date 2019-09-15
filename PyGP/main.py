@@ -19,7 +19,9 @@ def main():
     inst_lib.add_inst("Copy", inst.copy, False)
     inst_lib.add_inst("While", inst.while_, True)
     inst_lib.add_inst("Close", inst.close, False)
-    #inst_lib.add_inst("For", inst.for_, True)
+    inst_lib.add_inst("Break", inst.break_, False)
+    inst_lib.add_inst("For", inst.for_, True)
+    inst_lib.add_inst("If", inst.if_, True)
     hws = [Hardware(inst_lib) for _ in range(1000)]
     [hw.generate_program() for hw in hws]
 
