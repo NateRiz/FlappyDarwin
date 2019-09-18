@@ -2,10 +2,10 @@ from random import random, choice, randint
 
 
 def mutate(hw):
-    INSERTION_RATE = 0.015
-    DELETION_RATE = 0.015
-    SWAP_RATE = 0.015
-    ARG_RATE = 0.015
+    INSERTION_RATE = 0.005
+    DELETION_RATE = 0.005
+    SWAP_RATE = 0.005
+    ARG_RATE = 0.001
     insts = list(hw.inst_lib.lib.values())
 
     i = 1
@@ -21,7 +21,7 @@ def mutate(hw):
         if random() <= SWAP_RATE:
             del hw.instructions[i-1]
             inst = choice(insts)
-            hw.instructions.insert(i, inst[0](*inst[1:]))
+            hw.instructions.insert(i-1, inst[0](*inst[1:]))
             hw.instructions[i-1].args[0] = randint(0, len(hw.registers))
             hw.instructions[i-1].args[1] = randint(0, len(hw.registers))
             hw.instructions[i-1].args[2] = randint(0, len(hw.registers))

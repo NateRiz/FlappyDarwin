@@ -43,7 +43,7 @@ def main():
         [mutate(hw) for hw in hws]
 
     """
-    hw = Hardware(inst_lib)
+    hw = Hardware(inst_lib, 0, 8, 96, 60)
     hw.load_program("PyGP/program.txt")
     while not hw.EOP and ticks<100:
         ticks+=1

@@ -11,9 +11,11 @@ class State(Enum):
 
 
 class Pipe:
+    spawned = 0
     def __init__(self, height, width):
         self.passed = False
-        gap_size = 150
+        Pipe.spawned+=1
+        gap_size = max(0, 250-10*Pipe.spawned)
         ht = randint(00, height - gap_size)
         self.top = pygame.rect.Rect(width, 0, 100, ht)
 
@@ -25,7 +27,7 @@ class Bird:
     def __init__(self):
         self.VELOCITY_INITIAL = -10
 
-        self.rect = pygame.rect.Rect(16, 300+randint(-3,3), 32, 32)
+        self.rect = pygame.rect.Rect(16, 300 + randint(-3, 3), 32, 32)
         self.fitness = 0
         self.velocity = self.VELOCITY_INITIAL
         self.dead = False
@@ -36,8 +38,7 @@ class FlappyDarwin:
         pygame.init()
         self.WIDTH = 800
         self.HEIGHT = 600
-        self.FPS = 30
-        if population>1: self.FPS = 120
+        self.FPS = 60
         self.GRAVITY = .981
         self.QUIT_SIGNAL = False
         self.game_state = State.READY
@@ -45,6 +46,8 @@ class FlappyDarwin:
         self.pipe_speed = 3
         self.game_start_time = time()
         self.score = 0
+        self.generation = -1
+        self.font = pygame.font.Font(pygame.font.get_default_font(), 18)
 
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         self.pipes = []
@@ -57,6 +60,7 @@ class FlappyDarwin:
         self.game_state = State.READY
 
         while not self.QUIT_SIGNAL:
+            self.generation += 1
             while self.game_state != State.READY:
                 sleep(1)
 
@@ -64,7 +68,6 @@ class FlappyDarwin:
             while self.game_state == State.PLAYING:
                 clock.tick(self.FPS)
                 self.update()
-                self.draw()
                 self.poll()
 
     def poll(self):
@@ -82,6 +85,9 @@ class FlappyDarwin:
         for i in reversed(range(len(self.pipes))):
             self.pipes[i].top.x -= self.pipe_speed
             self.pipes[i].bot.x -= self.pipe_speed
+            if self.birds[0].rect.x > self.pipes[i].top.x and not self.pipes[i].passed:
+                self.pipes[i].passed = True
+                self.score+=1
             if self.pipes[i].top.right < 0:
                 del self.pipes[i]
 
@@ -93,6 +99,12 @@ class FlappyDarwin:
 
     def draw(self):
         self.screen.fill((0, 0, 0))
+
+        gen = self.font.render(F"Gen: {self.generation}", True, (255, 255, 255))
+        score = self.font.render(F"Score: {self.score}", True, (255, 255, 255))
+        self.screen.blit(gen, (8, 8))
+        self.screen.blit(score, (8, 16+gen.get_size()[1]))
+
         for pipe in self.pipes:
             pygame.draw.rect(self.screen, (255, 255, 255), pipe.top, 3)
             pygame.draw.rect(self.screen, (255, 255, 255), pipe.bot, 3)
@@ -104,7 +116,8 @@ class FlappyDarwin:
         pygame.display.flip()
 
     def spawn_pipe(self):
-        if not self.pipes or self.WIDTH - self.pipes[-1].top.right > 200:
+        pipe_horizontal_buffer = 400
+        if not self.pipes or self.WIDTH - self.pipes[-1].top.right > pipe_horizontal_buffer:
             self.pipes.append(Pipe(self.HEIGHT, self.WIDTH))
 
     def jump(self, id_=0):
@@ -115,6 +128,8 @@ class FlappyDarwin:
         self.birds = [Bird() for _ in range(self.population)]
         self.game_start_time = time()
         self.game_state = State.READY
+        Pipe.spawned=0
+        self.score = 0
 
     def check_dead(self):
         for bird in self.birds:

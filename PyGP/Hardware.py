@@ -1,5 +1,6 @@
 from random import randint, choice
 from enum import Enum
+from time import time, sleep
 
 """
 ###################################################
@@ -18,19 +19,21 @@ Warnings:
 
 
 class Hardware:
-    def __init__(self, inst_lib, id=0):
+
+    def __init__(self, inst_lib, trait=None, min_prog_len=8, max_prog_len=96, ips=0, ):
         self.instructions = []  # The actual program : List of Instruction Objects
         self.IP = 0  # Instruction Pointer
+        self.IPS = ips  # Caps the hardware at x instructions per second
         self.EOP = False  # have we reached the end of the program yet?
         self.registers = [0.0] * 24
         self.inst_lib = inst_lib
         self.fitness = -1
         self.block_cache = 0
         self.cache_dirty = True
-        self.id = id  # For external use. Must handle uniqueness outside of this class.
-
-        self.MAX_PROGRAM_LENGTH = 96
-        self.MIN_PROGRAM_LENGTH = 1
+        self.last_tick_time = 0
+        self.MIN_PROGRAM_LENGTH = min_prog_len
+        self.MAX_PROGRAM_LENGTH = max_prog_len
+        self.traits = trait  # Arbitrary information the user gives to the HW. Does not get copied.
 
     def reset(self):
         self.IP = 0
@@ -38,15 +41,34 @@ class Hardware:
         self.registers = [0.0] * 24
         self.fitness = -1
         self.cache_dirty = True
+        self.last_tick_time = 0
+
+    def copy(self):
+        hw = Hardware(self.inst_lib, None, self.MIN_PROGRAM_LENGTH, self.MAX_PROGRAM_LENGTH, self.IPS)
+
+        for i in self.instructions:
+            inst = self.inst_lib.lib[i.name]
+            hw.instructions.append(inst[0](*inst[1:]))
+            hw.instructions[-1].args = list(i.args)
+
+        return hw
 
     def tick(self):
-        if self.cache_dirty:
-            self.cache()
         if self.IP < 0 or self.IP >= len(self.instructions):
             return
+
+        if self.cache_dirty:
+            self.cache()
+
+        if self.IPS > 0:
+            elapsed = time() - self.last_tick_time
+            if elapsed < (1 / self.IPS):
+                sleep((1 / self.IPS) - elapsed)
+
         ip_next_state = self.instructions[self.IP].run(self)
         self.update_ip(ip_next_state)
         self.EOP = self.IP >= len(self.instructions)
+        self.last_tick_time = time()
 
     def cache(self):
         self.cache_dirty = False
@@ -137,10 +159,10 @@ class Hardware:
     def __str__(self):
         ret = [str(self.IP), str(self.registers)]
         tabs = 0
-        for i in self.instructions:
-            if i.name == "Close" and tabs>=1:
+        for idx, i in enumerate(self.instructions):
+            if i.name == "Close" and tabs >= 1:
                 tabs -= 1
-            ret.append("\t" * tabs + str(i))
+            ret.append(f"{idx}. " + "\t" * tabs + str(i))
             if i.is_block:
                 tabs += 1
 
