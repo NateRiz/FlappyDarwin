@@ -34,3 +34,32 @@ def mutate(hw):
             del hw.instructions[i-1]
 
         i += 1
+
+def recombination(hws):
+    RATE = .5
+    for hw1 in hws:
+        if random() <= RATE:
+            print("IN")
+            hw2 = choice(hws)
+            while hw2 == hw1:
+                hw2 = choice(hws)
+
+            hw1_inst_len = len(hw1.instructions)//2
+
+            for i in range(len(hw2.instructions)//2):
+                inst = hw1.inst_lib.get_inst(hw2.instructions[i].name)
+                inst.args = list(hw2.instructions[i].args)
+                hw1.instructions.append(inst)
+
+            del hw2.instructions[:len(hw2.instructions)//2]
+
+            for i in range(hw1_inst_len):
+                inst = hw2.inst_lib.get_inst(hw1.instructions[i].name)
+                inst.args = list(hw1.instructions[i].args)
+                hw2.instructions.append(inst)
+
+            del hw1.instructions[:hw1_inst_len]
+
+
+
+
