@@ -36,10 +36,9 @@ def mutate(hw):
         i += 1
 
 def recombination(hws):
-    RATE = .5
+    RATE = .3
     for hw1 in hws:
         if random() <= RATE:
-            print("IN")
             hw2 = choice(hws)
             while hw2 == hw1:
                 hw2 = choice(hws)

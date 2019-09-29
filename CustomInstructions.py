@@ -35,6 +35,11 @@ def get_pipe_x(hardware, args, game):
             break
     return 0
 
+def get_screen_height(hardware, args, game):
+    if args[0] < 0 or args[0] >= len(hardware.registers): return 0
+    hardware.registers[args[0]] = game.HEIGHT
+    return 0
+
 import pygame
 def check_pixel_collide(hardware, args, game):
     if args[0] < 0 or args[0] >= len(hardware.registers): return 0

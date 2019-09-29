@@ -1,7 +1,7 @@
 from PyGP.Hardware import Hardware, InstructionLibrary
 from PyGP import Instructions as inst
 from PyGP.Selection import tournament
-from PyGP.Mutation import mutate
+from PyGP.Mutation import mutate, recombination
 
 
 def main():
@@ -41,8 +41,8 @@ def main():
                 print("Fin with Fit:", best)
         hws = tournament(hws)
         [mutate(hw) for hw in hws]
-
     """
+    
     hw = Hardware(inst_lib, 0, 8, 96, 60)
     hw.load_program("PyGP/program.txt")
     while not hw.EOP and ticks<100:

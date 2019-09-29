@@ -1,15 +1,15 @@
 from FlappyDarwin import FlappyDarwin, State
-from PyGP.Hardware import Hardware, InstructionLibrary
+from PyGP.Hardware import InstructionLibrary
 import PyGP.Instructions as inst
 from PyGP.Selection import *
-from PyGP.Mutation import mutate
-from threading import Thread
+from PyGP.Mutation import mutate, recombination
+from threading import Thread, active_count
 from time import sleep
 import CustomInstructions as c_inst
 
 
 def main():
-    pop_size = 250
+    pop_size = 125
     game = FlappyDarwin(pop_size)
     Thread(target=test_hardware, args=(game, pop_size)).start()
     game.start()
@@ -18,11 +18,10 @@ def main():
 
 def test_hardware(game, pop_size):
     inst_lib = generate_inst_lib(game)
-    hws = [Hardware(inst_lib, id_, 8, 96, 1200) for id_ in range(pop_size)]
+    hws = [Hardware(inst_lib, id_, 8, 96) for id_ in range(pop_size)]
     [hw.generate_program() for hw in hws]
     #[hw.load_program("PyGP/program.txt") for hw in hws]
     best_fitness = 0
-    pop_size = len(hws)
     gen = 0
     while not game.QUIT_SIGNAL:
         gen += 1
@@ -33,8 +32,9 @@ def test_hardware(game, pop_size):
             t.start()
 
         game.restart()
+
         while game.game_state != State.GAMEOVER:
-            sleep(.5)
+            sleep(.1)
 
         for t in threads:
             t.join()
@@ -49,24 +49,36 @@ def test_hardware(game, pop_size):
                 print("Finished with fitness", hw.fitness)
                 print("____________________________")
 
+        copy_best = local_best.copy()
+        copy_best.traits = 0
+
         hws = tournament(hws)
         [mutate(hw) for hw in hws]
+        recombination(hws)
 
         # Keep around the best performing from the previous generation & reset its hardware
-        hws[0] = local_best
-        hws[0].reset()
-
+        hws[0] = copy_best
 
 def run_single_hardware(hw, game, id_):
     ticks = 0
+    insts_per_frame = 30
+
     while game.game_state != State.PLAYING:
-        sleep(.2)
+        sleep(.1)
+        game.birds[id_].ready_to_start = True
+
     while not game.birds[id_].dead and not hw.EOP:
-        hw.tick()
-        ticks += 1
-        if game.QUIT_SIGNAL: return
+        sleep(.01)
+        while ticks < game.frames * insts_per_frame and not hw.EOP and not game.birds[id_].dead:
+            game.birds[id_].ready_for_update = False
+            hw.tick()
+            ticks += 1
+            if game.QUIT_SIGNAL:
+                return
+        game.birds[id_].ready_for_update = True
 
     hw.cache_fitness(game.birds[id_].fitness)
+
 
 
 def generate_inst_lib(game):
@@ -78,7 +90,7 @@ def generate_inst_lib(game):
     inst_lib.add_inst("Eq", inst.eq, False)
     inst_lib.add_inst("Greater", inst.greater, False)
     inst_lib.add_inst("Less", inst.less, False)
-    #inst_lib.add_inst("Not", inst.not_, False)
+    inst_lib.add_inst("Not", inst.not_, False)
     inst_lib.add_inst("Assign", inst.assign, False)
     inst_lib.add_inst("Copy", inst.copy, False)
     inst_lib.add_inst("While", inst.while_, True)
@@ -90,6 +102,7 @@ def generate_inst_lib(game):
     inst_lib.add_inst("GapBot", lambda hw, args: c_inst.get_gap_bot(hw, args, game), False)
     inst_lib.add_inst("PipeX", lambda hw, args: c_inst.get_pipe_x(hw, args, game), False)
     inst_lib.add_inst("Pixel", lambda hw, args: c_inst.check_pixel_collide(hw, args, game), False)
+    inst_lib.add_inst("ScreenHeight", lambda hw, args: c_inst.get_screen_height(hw, args, game), False)
     inst_lib.add_inst("For", inst.for_, True)
     inst_lib.add_inst("If", inst.if_, True)
     return inst_lib

@@ -43,6 +43,10 @@ class Hardware:
         self.cache_dirty = True
         self.last_tick_time = 0
 
+    def clear_program(self):
+        self.instructions.clear()
+        self.reset()
+
     def copy(self):
         hw = Hardware(self.inst_lib, None, self.MIN_PROGRAM_LENGTH, self.MAX_PROGRAM_LENGTH, self.IPS)
 
