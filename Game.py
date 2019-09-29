@@ -7,16 +7,17 @@ import CustomInstructions as c_inst
 
 
 def main():
-    pop_size = 125
-    ticks_per_update = 30
-    hws = [Hardware(None, id_, 8, 96) for id_ in range(pop_size)]
+    pop_size = 150
+    ticks_per_update = 25  # noise.
+    hws = [Hardware(None, i, 8, 96) for i in range(pop_size)]
     game = FlappyDarwin(hws, ticks_per_update)
     inst_lib = generate_inst_lib(game)
     for hw in hws:
         hw.inst_lib = inst_lib
 
     [hw.generate_program() for hw in hws]
-    #[hw.load_program("PyGP/program.txt") for hw in hws]
+    #hws[0] = Hardware(inst_lib, 0, 8, 96)
+    #hws[0].load_program("PyGP/program.txt")
 
     best_fitness = 0
     gen = 0
