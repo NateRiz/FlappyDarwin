@@ -1,53 +1,41 @@
-from FlappyDarwin import FlappyDarwin, State
+from FlappyDarwin import FlappyDarwin
 from PyGP.Hardware import InstructionLibrary
 import PyGP.Instructions as inst
 from PyGP.Selection import *
 from PyGP.Mutation import mutate, recombination
-from threading import Thread, active_count
-from time import sleep
 import CustomInstructions as c_inst
 
 
 def main():
     pop_size = 125
-    game = FlappyDarwin(pop_size)
-    Thread(target=test_hardware, args=(game, pop_size)).start()
-    game.start()
-    print("Thread 1 ended.")
-
-
-def test_hardware(game, pop_size):
+    ticks_per_update = 30
+    hws = [Hardware(None, id_, 8, 96) for id_ in range(pop_size)]
+    game = FlappyDarwin(hws, ticks_per_update)
     inst_lib = generate_inst_lib(game)
-    hws = [Hardware(inst_lib, id_, 8, 96) for id_ in range(pop_size)]
+    for hw in hws:
+        hw.inst_lib = inst_lib
+
     [hw.generate_program() for hw in hws]
     #[hw.load_program("PyGP/program.txt") for hw in hws]
+
     best_fitness = 0
     gen = 0
     while not game.QUIT_SIGNAL:
         gen += 1
         print(F"Generation: {gen}")
-
-        threads = [Thread(target=run_single_hardware, args=(hws[i], game, i)) for i in range(pop_size)]
-        for t in threads:
-            t.start()
-
+        game.set_hardware(hws)
         game.restart()
+        game.start()
 
-        while game.game_state != State.GAMEOVER:
-            sleep(.1)
+        for i, hw in enumerate(hws):
+            hw.cache_fitness(game.birds[i].fitness)
 
-        for t in threads:
-            t.join()
-
-        local_best = None
-        for hw in hws:
-            if not local_best or hw.fitness > local_best.fitness:
-                local_best = hw
-            if hw.fitness > best_fitness:
-                best_fitness = hw.fitness
-                print(hw)
-                print("Finished with fitness", hw.fitness)
-                print("____________________________")
+        local_best = max(hws, key=lambda hw: hw.fitness)
+        if local_best.fitness > best_fitness:
+            best_fitness = local_best.fitness
+            print(local_best)
+            print("Finished with fitness", local_best.fitness)
+            print("____________________________")
 
         copy_best = local_best.copy()
         copy_best.traits = 0
@@ -55,29 +43,12 @@ def test_hardware(game, pop_size):
         hws = tournament(hws)
         [mutate(hw) for hw in hws]
         recombination(hws)
+        for i, hw in enumerate(hws):
+            hw.traits = i
 
         # Keep around the best performing from the previous generation & reset its hardware
         hws[0] = copy_best
-
-def run_single_hardware(hw, game, id_):
-    ticks = 0
-    insts_per_frame = 30
-
-    while game.game_state != State.PLAYING:
-        sleep(.1)
-        game.birds[id_].ready_to_start = True
-
-    while not game.birds[id_].dead and not hw.EOP:
-        sleep(.01)
-        while ticks < game.frames * insts_per_frame and not hw.EOP and not game.birds[id_].dead:
-            game.birds[id_].ready_for_update = False
-            hw.tick()
-            ticks += 1
-            if game.QUIT_SIGNAL:
-                return
-        game.birds[id_].ready_for_update = True
-
-    hw.cache_fitness(game.birds[id_].fitness)
+        hws[0].traits = 0
 
 
 

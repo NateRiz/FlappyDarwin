@@ -1,14 +1,6 @@
 import pygame
 from random import randint
-from time import sleep
-from enum import Enum
-
-
-class State(Enum):
-    SETUP = 0
-    PLAYING = 1
-    GAMEOVER = 2
-
+from threading import Thread
 
 class Pipe:
     spawned = 0
@@ -35,9 +27,8 @@ class Bird:
         self.ready_for_update = False
 
 
-
 class FlappyDarwin:
-    def __init__(self, population=1):
+    def __init__(self, hardware=None, ticks_per_update = 30):
         pygame.init()
         self.WIDTH = 800
         self.HEIGHT = 600
@@ -54,32 +45,20 @@ class FlappyDarwin:
 
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         self.pipes = []
-        self.birds = [Bird() for _ in range(population)]
-        self.population = population
-
-        self.game_state = State.SETUP
+        self.hardware = hardware
+        self.pop_size = 1 if not hardware else len(hardware)
+        self.birds = [Bird() for _ in range(self.pop_size)]
+        self.ticks_per_update = ticks_per_update
 
     def start(self):
+        self.generation += 1
 
-        while not self.QUIT_SIGNAL:
-
-            while sum([bird.ready_to_start for bird in self.birds]) != self.population:
-                sleep(.1)
-
-            self.game_state = State.PLAYING
-            self.generation += 1
-
-            while self.game_state == State.PLAYING:
-                while sum([bird.ready_for_update for bird in self.birds]) != self.population:
-                    sleep(.1)
-                self.update()
-                if not self.evo_mode:
-                    self.draw()
-                self.poll()
-
-            while self.game_state == State.GAMEOVER:
-                sleep(.1)
-
+        while not all([bird.dead for bird in self.birds]):
+            self.update()
+            if not self.evo_mode:
+                self.draw()
+            self.poll()
+            self.run_all_hardware()
 
     def poll(self):
         for event in pygame.event.get():
@@ -93,6 +72,22 @@ class FlappyDarwin:
 
                 if event.key == pygame.K_RETURN:
                     self.evo_mode = not self.evo_mode
+
+    def run_all_hardware(self):
+        threads = [Thread(target=self.run_single_hardware, args=(i, hw)) for i, hw in enumerate(self.hardware)]
+        for t in threads:
+            t.start()
+
+        for t in threads:
+            t.join()
+
+    def run_single_hardware(self, i, hw):
+        ticks = 0
+        if self.birds[i].dead:
+            return
+        while ticks < self.ticks_per_update and not hw.EOP:
+            hw.tick()
+            ticks += 1
 
     def update(self):
         self.frames += 1
@@ -111,8 +106,6 @@ class FlappyDarwin:
             bird.rect.y += bird.velocity
 
         self.check_dead()
-        if sum([bird.dead for bird in self.birds]) == self.population:
-            self.game_state = State.GAMEOVER
 
     def draw(self):
         self.screen.fill((0, 0, 0))
@@ -140,13 +133,15 @@ class FlappyDarwin:
     def jump(self, id_=0):
         self.birds[id_].velocity = self.birds[id_].VELOCITY_INITIAL
 
+    def set_hardware(self, hardware):
+        self.hardware = hardware
+
     def restart(self):
         self.pipes.clear()
-        self.birds = [Bird() for _ in range(self.population)]
+        self.birds = [Bird() for _ in range(self.pop_size)]
         Pipe.spawned = 0
         self.score = 0
         self.frames = 1
-        self.game_state = State.SETUP
 
     def check_dead(self):
         for bird in self.birds:
@@ -163,7 +158,7 @@ class FlappyDarwin:
                     self.kill_bird(bird)
 
     def kill_bird(self, bird):
-        assert bird.dead == Falses
+        assert not bird.dead
         bird.fitness = self.frames
         bird.dead = True
 
