@@ -1,6 +1,7 @@
 import pygame
 from random import randint
 from threading import Thread
+from time import sleep
 
 
 class Pipe:
@@ -10,7 +11,7 @@ class Pipe:
         self.passed = False
         Pipe.spawned += 1
         gap_size = max(0, 250 - 10 * Pipe.spawned)
-        ht = randint(00, height - gap_size)
+        ht = randint(0, height - gap_size)
         self.top = pygame.rect.Rect(width, 0, 100, ht)
 
         hb = ht + gap_size
@@ -20,12 +21,13 @@ class Pipe:
 class Bird:
     def __init__(self):
         self.VELOCITY_INITIAL = -10
-        self.rect = pygame.rect.Rect(16, 300 + randint(-3, 3), 32, 32)
+        self.rect = pygame.rect.Rect(16, 450, 32, 32)
         self.fitness = 0
         self.velocity = self.VELOCITY_INITIAL
         self.dead = False
         self.ready_to_start = False
         self.ready_for_update = False
+        self.last_pipe_gap_crossed = 0  # large reward once per pipe for crossing the empty gap
 
 
 class FlappyDarwin:
@@ -76,6 +78,7 @@ class FlappyDarwin:
                     self.evo_mode = not self.evo_mode
 
     def run_all_hardware(self):
+        """
         threads = [Thread(target=self.run_single_hardware,
                           args=(i, hw)) for i, hw in enumerate(self.hardware)
                    if not self.birds[i].dead and not hw.EOP]
@@ -84,6 +87,9 @@ class FlappyDarwin:
 
         for t in threads:
             t.join()
+        """
+        for i, hw in enumerate(self.hardware):
+            self.run_single_hardware(i, hw)
 
     def run_single_hardware(self, i, hw):
         ticks = 0
@@ -110,9 +116,15 @@ class FlappyDarwin:
             bird.velocity += self.GRAVITY
             bird.rect.y += bird.velocity
 
+        mid_y = (self.next_pipe.top.bottom + self.next_pipe.bot.top) // 2
+        max_distance = (self.next_pipe.bot.top - self.next_pipe.top.bottom) // 2
+        regulator = 10
         for bird in self.birds:
             if self.next_pipe.top.bottom <= bird.rect.centery <= self.next_pipe.bot.top:
-                bird.fitness += .01
+                bird.fitness += (1 - abs(mid_y - bird.rect.centery) / max_distance) / regulator
+                if bird.last_pipe_gap_crossed == self.score:
+                    bird.last_pipe_gap_crossed += 1
+                    bird.fitness += 50
 
         self.check_dead()
 
@@ -143,7 +155,21 @@ class FlappyDarwin:
         pygame.display.flip()
 
     def spawn_pipe(self):
-        pipe_horizontal_buffer = 400
+        pipe_horizontal_buffer = 600
+
+        if not self.pipes:
+            self.pipes.append(Pipe(self.HEIGHT, self.WIDTH))
+            ht = 30
+            self.pipes[-1].top = pygame.rect.Rect(self.WIDTH // 2, 0, 100, ht)
+            hb = ht + 250
+            self.pipes[-1].bot = pygame.rect.Rect(self.WIDTH // 2, hb, 100, self.HEIGHT - hb)
+
+            self.pipes.append(Pipe(self.HEIGHT, self.WIDTH))
+            ht = 300
+            self.pipes[-1].top = pygame.rect.Rect(self.WIDTH // 2 + pipe_horizontal_buffer, 0, 100, ht)
+            hb = ht + 250
+            self.pipes[-1].bot = pygame.rect.Rect(self.WIDTH // 2 + pipe_horizontal_buffer, hb, 100, self.HEIGHT - hb)
+
         if not self.pipes or self.WIDTH - self.pipes[-1].top.right > pipe_horizontal_buffer:
             self.pipes.append(Pipe(self.HEIGHT, self.WIDTH))
 
@@ -168,11 +194,11 @@ class FlappyDarwin:
             if bird.rect.bottom >= self.HEIGHT or bird.rect.top <= 0:
                 self.kill_bird(bird)
 
-        for bird in self.birds:
-            if bird.dead:
-                continue
-            for pipe in self.pipes:
-                if pipe.top.colliderect(bird.rect) or pipe.bot.colliderect(bird.rect):
+        if self.next_pipe.top.left <= self.birds[0].rect.right or self.next_pipe.top.right <= self.birds[0].rect.left:
+            for bird in self.birds:
+                if bird.dead:
+                    continue
+                if self.next_pipe.top.colliderect(bird.rect) or self.next_pipe.bot.colliderect(bird.rect):
                     self.kill_bird(bird)
 
     def kill_bird(self, bird):

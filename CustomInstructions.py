@@ -6,7 +6,7 @@ def jump(hardware, game):
 
 def get_bird_height(hardware, args, game):
     if args[0] < 0 or args[0] >= len(hardware.registers): return 0
-    hardware.registers[args[0]] = game.birds[hardware.traits].rect.y
+    hardware.registers[args[0]] = game.birds[hardware.traits].rect.centery
     return 0
 
 
@@ -40,6 +40,7 @@ def get_screen_height(hardware, args, game):
     hardware.registers[args[0]] = game.HEIGHT
     return 0
 
+"""
 import pygame
 def check_pixel_collide(hardware, args, game):
     if args[0] < 0 or args[0] >= len(hardware.registers): return 0
@@ -57,3 +58,4 @@ def check_pixel_collide(hardware, args, game):
         hardware.registers[args[2]] = 0
 
     return 0
+"""
