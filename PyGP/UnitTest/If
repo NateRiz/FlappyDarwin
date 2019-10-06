@@ -1,0 +1,11 @@
+Assign 0 33 0
+Assign 2 2 0
+Assign 3 1 0
+While 0 0 0
+    Mod 0 2 1
+    Not 1 1 0
+    If 1 0 0
+        Add 4 3 4
+    Close 0 0 0
+    Sub 0 3 0
+Close 0 0 0
