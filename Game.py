@@ -7,8 +7,8 @@ import CustomInstructions as c_inst
 
 
 def main():
-    pop_size = 150
-    ticks_per_update = 25  # noise.
+    pop_size = 100
+    ticks_per_update = 50
     hws = [Hardware(None, i, 8, 96) for i in range(pop_size)]
     game = FlappyDarwin(hws, ticks_per_update)
     inst_lib = generate_inst_lib(game)
@@ -17,7 +17,8 @@ def main():
 
     [hw.generate_program() for hw in hws]
     #hws[0] = Hardware(inst_lib, 0, 8, 96)
-    #hws[0].load_program("PyGP/program.txt")
+    #hws[0].load_program("PyGP/test_program.txt")
+    #hws[0].set_verbose()
 
     best_fitness = 0
     gen = 0
@@ -57,24 +58,24 @@ def generate_inst_lib(game):
     inst_lib = InstructionLibrary()
     inst_lib.add_inst("Add", inst.add, False)
     inst_lib.add_inst("Sub", inst.sub, False)
-    inst_lib.add_inst("Mul", inst.mul, False)
-    inst_lib.add_inst("Div", inst.div, False)
+    #inst_lib.add_inst("Mul", inst.mul, False)
+    #inst_lib.add_inst("Div", inst.div, False)
     inst_lib.add_inst("Eq", inst.eq, False)
     inst_lib.add_inst("Greater", inst.greater, False)
     inst_lib.add_inst("Less", inst.less, False)
-    inst_lib.add_inst("Not", inst.not_, False)
+    #inst_lib.add_inst("Not", inst.not_, False)
     inst_lib.add_inst("Assign", inst.assign, False)
     inst_lib.add_inst("Copy", inst.copy, False)
     inst_lib.add_inst("While", inst.while_, True)
-    inst_lib.add_inst("Break", inst.break_, False)
+    #inst_lib.add_inst("Break", inst.break_, False) broken when its not in a loop or when its in an if
     inst_lib.add_inst("Close", inst.close, False)
     inst_lib.add_inst("Jump", lambda hw, __: c_inst.jump(hw, game), False)
     inst_lib.add_inst("BirdHeight", lambda hw, args: c_inst.get_bird_height(hw, args, game), False)
     inst_lib.add_inst("GapTop", lambda hw, args: c_inst.get_gap_top(hw, args, game), False)
     inst_lib.add_inst("GapBot", lambda hw, args: c_inst.get_gap_bot(hw, args, game), False)
     inst_lib.add_inst("PipeX", lambda hw, args: c_inst.get_pipe_x(hw, args, game), False)
-    inst_lib.add_inst("Pixel", lambda hw, args: c_inst.check_pixel_collide(hw, args, game), False)
-    inst_lib.add_inst("ScreenHeight", lambda hw, args: c_inst.get_screen_height(hw, args, game), False)
+    #inst_lib.add_inst("Pixel", lambda hw, args: c_inst.check_pixel_collide(hw, args, game), False)
+    #inst_lib.add_inst("ScreenHeight", lambda hw, args: c_inst.get_screen_height(hw, args, game), False)
     inst_lib.add_inst("For", inst.for_, True)
     inst_lib.add_inst("If", inst.if_, True)
     return inst_lib

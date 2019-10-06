@@ -28,12 +28,15 @@ class Hardware:
         self.registers = [0.0] * 24
         self.inst_lib = inst_lib
         self.fitness = -1
-        self.block_cache = 0
         self.cache_dirty = True
         self.last_tick_time = 0
         self.MIN_PROGRAM_LENGTH = min_prog_len
         self.MAX_PROGRAM_LENGTH = max_prog_len
         self.traits = trait  # Arbitrary information the user gives to the HW. Does not get copied.
+        self.verbose = False
+        self.file = None
+        self.close_map = {}  # tells a Close where its corresponding Block is
+        self.block_map = {}  # tells a Block where its corresponding Close is
 
     def reset(self):
         self.IP = 0
@@ -42,6 +45,9 @@ class Hardware:
         self.fitness = -1
         self.cache_dirty = True
         self.last_tick_time = 0
+        self.verbose = False
+        if self.file:
+            self.file.close()
 
     def clear_program(self):
         self.instructions.clear()
@@ -57,6 +63,10 @@ class Hardware:
 
         return hw
 
+    def set_verbose(self):
+        self.verbose = True
+        self.file = open(f"{self.traits}.txt", "w")
+
     def tick(self):
         if self.IP < 0 or self.IP >= len(self.instructions):
             return
@@ -69,6 +79,12 @@ class Hardware:
             if elapsed < (1 / self.IPS):
                 sleep((1 / self.IPS) - elapsed)
 
+        if self.file:
+            self.file.write(F"Inst Ptr: {self.IP}\n")
+            self.file.write(str([F"{i}: {reg}" for i, reg in enumerate(self.registers) if reg]))
+            self.file.write("\n")
+            self.file.write(F"{str(self.instructions[self.IP])} [{self.instructions[self.IP].increment}]")
+            self.file.write("\n\n")
         ip_next_state = self.instructions[self.IP].run(self)
         self.update_ip(ip_next_state)
         self.EOP = self.IP >= len(self.instructions)
@@ -76,51 +92,30 @@ class Hardware:
 
     def cache(self):
         self.cache_dirty = False
-        first_block = False
-        for inst in self.instructions:
+        stack = []
+        for i, inst in enumerate(self.instructions):
             if inst.is_block:
-                self.block_cache += 1
-                first_block = True
-            elif inst.name == "Close" and first_block:
-                self.block_cache -= 1
-        for _ in range(self.block_cache):
+                stack.append(i)
+            elif inst.name == "Close":
+                if stack:
+                    blk = stack.pop()
+                    self.close_map[i] = blk
+                    self.block_map[blk] = i
+                else:
+                    self.close_map[i] = i+1
+        for _ in range(len(stack)):
             self.instructions.append(self.inst_lib.get_inst("Close"))
+            blk = stack.pop()
+            self.close_map[len(self.instructions)-1] = blk
+            self.block_map[blk] = len(self.instructions)-1
 
     def update_ip(self, ip_next_state):
-        next_ip = -1
-
         if ip_next_state == IP_next_state.LOOP_END:
-            open_block = 1
-            ip = self.IP + 1
-            while ip < len(self.instructions):
-                if self.instructions[ip].name == "Close":
-                    open_block -= 1
-                    if open_block == 0:
-                        next_ip = ip + 1  # we want to go to the line after the close.
-                        break
-                elif self.instructions[ip].is_block:
-                    open_block += 1
-                ip += 1
+            self.IP = self.block_map[self.IP] + 1
 
-            if next_ip < len(self.instructions) and self.instructions[next_ip]:
-                self.IP = next_ip
-                ip_next_state = IP_next_state.LOOP_START
+        elif ip_next_state == IP_next_state.LOOP_START:
+            self.IP = self.close_map[self.IP]
 
-        if ip_next_state == IP_next_state.LOOP_START:
-            open_block = 0
-            ip = self.IP
-            while ip >= 0:
-                if self.instructions[ip].name == "Close":
-                    open_block += 1
-                elif self.instructions[ip].is_block:
-                    open_block -= 1
-                    if open_block == 0:
-                        next_ip = ip  # retest the while loop
-                        break
-                ip -= 1
-
-        if next_ip != -1:
-            self.IP = next_ip
         else:
             self.IP += 1
 
@@ -137,9 +132,9 @@ class Hardware:
         while i < prog_len:
             inst = choice(insts)
             self.instructions.append(inst[0](*inst[1:]))
-            self.instructions[-1].args[0] = randint(0, len(self.registers))
-            self.instructions[-1].args[1] = randint(0, len(self.registers))
-            self.instructions[-1].args[2] = randint(0, len(self.registers))
+            self.instructions[-1].args[0] = randint(0, len(self.registers)-1)
+            self.instructions[-1].args[1] = randint(0, len(self.registers)-1)
+            self.instructions[-1].args[2] = randint(0, len(self.registers)-1)
             i += 1
 
     def load_program(self, name):
@@ -166,7 +161,7 @@ class Hardware:
         for idx, i in enumerate(self.instructions):
             if i.name == "Close" and tabs >= 1:
                 tabs -= 1
-            ret.append(f"{idx}. " + "\t" * tabs + str(i))
+            ret.append(f"{str(idx)+'.':>3} " + "\t" * tabs + str(i))
             if i.is_block:
                 tabs += 1
 
