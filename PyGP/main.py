@@ -11,6 +11,7 @@ def main():
     inst_lib.add_inst("Sub", inst.sub, False)
     inst_lib.add_inst("Mul", inst.mul, False)
     inst_lib.add_inst("Div", inst.div, False)
+    inst_lib.add_inst("Mod", inst.mod, False)
     inst_lib.add_inst("Eq", inst.eq, False)
     inst_lib.add_inst("Greater", inst.greater, False)
     inst_lib.add_inst("Less", inst.less, False)

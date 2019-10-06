@@ -42,6 +42,16 @@ def div(hardware, args):
     return 0
 
 
+def mod(hardware, args):
+    a, b, dest = args
+    if a < 0 or a >= len(hardware.registers): return 0
+    if b < 0 or b >= len(hardware.registers): return 0
+    if dest < 0 or dest >= len(hardware.registers): return 0
+    if hardware.registers[b] == 0: return 0
+    hardware.registers[dest] = clamp(hardware.registers[a] % hardware.registers[b])
+    return 0
+
+
 def eq(hardware, args):
     a, b, dest = args
     if a < 0 or a >= len(hardware.registers): return 0

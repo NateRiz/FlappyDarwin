@@ -14,21 +14,21 @@ def mutate(hw):
         if len(hw) < hw.MAX_PROGRAM_LENGTH and random() <= INSERTION_RATE:
             inst = choice(insts)
             hw.instructions.insert(i, inst[0](*inst[1:]))
-            hw.instructions[i].args[0] = randint(0, len(hw.registers))
-            hw.instructions[i].args[1] = randint(0, len(hw.registers))
-            hw.instructions[i].args[2] = randint(0, len(hw.registers))
+            hw.instructions[i].args[0] = randint(0, len(hw.registers)-1)
+            hw.instructions[i].args[1] = randint(0, len(hw.registers)-1)
+            hw.instructions[i].args[2] = randint(0, len(hw.registers)-1)
 
         if random() <= SWAP_RATE:
             del hw.instructions[i-1]
             inst = choice(insts)
             hw.instructions.insert(i-1, inst[0](*inst[1:]))
-            hw.instructions[i-1].args[0] = randint(0, len(hw.registers))
-            hw.instructions[i-1].args[1] = randint(0, len(hw.registers))
-            hw.instructions[i-1].args[2] = randint(0, len(hw.registers))
+            hw.instructions[i-1].args[0] = randint(0, len(hw.registers)-1)
+            hw.instructions[i-1].args[1] = randint(0, len(hw.registers)-1)
+            hw.instructions[i-1].args[2] = randint(0, len(hw.registers)-1)
 
         for j in range(3):
             if random() <= ARG_RATE:
-                hw.instructions[i-1].args[j] = randint(0, len(hw.registers))
+                hw.instructions[i-1].args[j] = randint(0, len(hw.registers)-1)
 
         if len(hw) > hw.MIN_PROGRAM_LENGTH and random() <= DELETION_RATE:
             del hw.instructions[i-1]
@@ -36,7 +36,7 @@ def mutate(hw):
         i += 1
 
 def recombination(hws):
-    RATE = .02
+    RATE = .2
     for hw1 in hws:
         if random() <= RATE:
             hw2 = choice(hws)
@@ -58,6 +58,9 @@ def recombination(hws):
                 hw2.instructions.append(inst)
 
             del hw1.instructions[:hw1_inst_len]
+
+            hw1.cache_dirty = True
+            hw2.cache_dirty = True
 
 
 
