@@ -48,6 +48,7 @@ class Hardware:
         self.verbose = False
         if self.file:
             self.file.close()
+            self.file = None
 
     def clear_program(self):
         self.instructions.clear()
@@ -137,23 +138,27 @@ class Hardware:
             self.instructions[-1].args[2] = randint(0, len(self.registers)-1)
             i += 1
 
-    def load_program(self, name):
+    def load_program_from_file(self, name):
         with open(name, "r") as file:
-            for line in file:
-                if not line.strip(): continue
+            lines = file.readlines()
+        self.load_program_from_string("\n".join(lines))
 
-                line = line.split()
-                inst_name = line[0]
-                il = self.inst_lib.lib[inst_name]
-                inst = il[0](*il[1:])
-                i = 0
-                for arg in line:
-                    if arg.isdigit():
-                        inst.args[i] = int(arg)
-                        i += 1
-                        if i >= 3:
-                            break
-                self.instructions.append(inst)
+    def load_program_from_string(self, str):
+        for line in str.split("\n"):
+            if not line.strip(): continue
+
+            line = line.split()
+            inst_name = line[0]
+            il = self.inst_lib.lib[inst_name]
+            inst = il[0](*il[1:])
+            i = 0
+            for arg in line:
+                if arg.isdigit():
+                    inst.args[i] = int(arg)
+                    i += 1
+                    if i >= 3:
+                        break
+            self.instructions.append(inst)
 
     def __str__(self):
         ret = [str(self.IP), str(self.registers)]
@@ -162,6 +167,18 @@ class Hardware:
             if i.name == "Close" and tabs >= 1:
                 tabs -= 1
             ret.append(f"{str(idx)+'.':>3} " + "\t" * tabs + str(i))
+            if i.is_block:
+                tabs += 1
+
+        return "\n".join(ret)
+
+    def get_writable_program(self):
+        ret = []
+        tabs = 0
+        for idx, i in enumerate(self.instructions):
+            if i.name == "Close" and tabs >= 1:
+                tabs -= 1
+            ret.append("\t" * tabs + F"{i.name} {','.join([str(j) for j in i.args])}")
             if i.is_block:
                 tabs += 1
 
