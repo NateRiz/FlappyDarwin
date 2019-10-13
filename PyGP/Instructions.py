@@ -5,6 +5,7 @@ def clamp(n):
         return 2147483648
     return n
 
+
 def add(hardware, args):
     a, b, dest = args
     if a < 0 or a >= len(hardware.registers): return 0
@@ -135,9 +136,11 @@ def if_(hardware, args):  # Not a normal conditional. Can be broken out of with 
     if hardware.registers[args[0]] == 0 or increment != 0:
         return 2
     return 0
-
+"""
+broken on first level of program (if not in block)
 def break_(_, __):
     return 2
+"""
 
 def close(_, __):
     return 1

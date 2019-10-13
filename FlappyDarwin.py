@@ -41,6 +41,7 @@ class FlappyDarwin:
         self.evo_mode = False
         self.GRAVITY = .981
         self.QUIT_SIGNAL = False
+        self.human_playing = hardware is None
 
         self.pipe_speed = 3
         self.score = 0
@@ -62,18 +63,22 @@ class FlappyDarwin:
     def start(self):
         self.generation += 1
         self.restart()
-
+        clock = pygame.time.Clock()
         for i in range(self.num_tests):
             self.current_test = i
-            [hw.reset() for hw in self.hardware]
-            self.restart_test()
+            if not self.human_playing:
+                [hw.reset() for hw in self.hardware]
+                self.restart_test()
 
             while not all([bird.dead for bird in self.birds]):
                 self.update()
                 if not self.evo_mode:
                     self.draw()
                 self.poll()
-                self.run_all_hardware()
+                if not self.human_playing:
+                    self.run_all_hardware()
+                else:
+                    clock.tick(self.FPS)
 
     def poll(self):
         for event in pygame.event.get():
