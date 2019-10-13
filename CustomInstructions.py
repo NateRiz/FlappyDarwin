@@ -1,4 +1,3 @@
-
 def jump(hardware, game):
     game.jump(hardware.traits)
     return 0
@@ -12,33 +11,33 @@ def get_bird_height(hardware, args, game):
 
 def get_gap_top(hardware, args, game):
     if args[0] < 0 or args[0] >= len(hardware.registers): return 0
-    for pipe in game.pipes:
-        if pipe.top.right > game.birds[hardware.traits].rect.left:
-            hardware.registers[args[0]] = pipe.top.bottom
-            break
+    hardware.registers[args[0]] = game.next_pipe.top.bottom
     return 0
 
 
 def get_gap_bot(hardware, args, game):
     if args[0] < 0 or args[0] >= len(hardware.registers): return 0
-    for pipe in game.pipes:
-        if pipe.top.right > game.birds[hardware.traits].rect.left:
-            hardware.registers[args[0]] = pipe.bot.top
-            break
+    hardware.registers[args[0]] = game.next_pipe.bot.top
     return 0
+
+
+def get_gap_midpoint(hardware, args, game):
+    if args[0] < 0 or args[0] >= len(hardware.registers): return 0
+    hardware.registers[args[0]] = (game.next_pipe.bot.top + game.next_pipe.bot.top) // 2
+    return 0
+
 
 def get_pipe_x(hardware, args, game):
     if args[0] < 0 or args[0] >= len(hardware.registers): return 0
-    for pipe in game.pipes:
-        if pipe.top.right > game.birds[hardware.traits].rect.left:
-            hardware.registers[args[0]] = pipe.bot.x
-            break
+    hardware.registers[args[0]] = game.next_pipe.x
     return 0
+
 
 def get_screen_height(hardware, args, game):
     if args[0] < 0 or args[0] >= len(hardware.registers): return 0
     hardware.registers[args[0]] = game.HEIGHT
     return 0
+
 
 """
 import pygame
