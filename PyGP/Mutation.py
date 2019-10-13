@@ -36,7 +36,7 @@ def mutate(hw):
         i += 1
 
 def recombination(hws):
-    RATE = .2
+    RATE = .02
     for hw1 in hws:
         if random() <= RATE:
             hw2 = choice(hws)
