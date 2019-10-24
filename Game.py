@@ -5,6 +5,9 @@ from PyGP.Selection import *
 from PyGP.Mutation import mutate, recombination
 import CustomInstructions as c_inst
 import os
+from time import sleep
+import sys
+
 
 def main():
 
@@ -27,10 +30,11 @@ def main():
     best_fitness = [0]
     gen = 0
 
-    if os.path.exists(os.path.join(os.getcwd(), "saved_programs.gp")):
-        print("LOADING FROM EXISTING SAVED GP FILE")
-        hws, gen = load_programs(inst_lib, min_program_length, max_program_length, pop_size)
-        game.generation = gen
+    if len(sys.argv) > 1:
+        if os.path.exists(os.path.join(os.getcwd(), "")):
+            print(F"LOADING FROM EXISTING SAVED GP FILE: {sys.argv[1]}")
+            hws, gen = load_programs(sys.argv[1], inst_lib, min_program_length, max_program_length, pop_size)
+            game.generation = gen
 
     while not game.QUIT_SIGNAL:
         gen += 1
@@ -52,6 +56,7 @@ def main():
         copy_best.traits = 0
 
         hws = lexicase(hws)
+        #hws = tournament(hws)
         [mutate(hw) for hw in hws]
         recombination(hws)
         for i, hw in enumerate(hws):
@@ -61,19 +66,20 @@ def main():
         hws[0] = copy_best
         hws[0].traits = 0
 
-        if gen > 0 and not gen % 5:
+        if gen in {50, 100, 500, 1000, 1500, 2000, 2500, 3000}:
             save_programs(gen, hws)
 
 
 def save_programs(gen, hws):
-    with open("saved_programs.gp", "w") as file:
+    with open(F"gen{gen}.gp", "w") as file:
         file.write(str(gen)+"\n")
         for hw in hws:
             file.write(hw.get_writable_program())
             file.write("\n#\n")
 
-def load_programs(inst_lib, min_len, max_len, pop_size):
-    with open("saved_programs.gp", "r") as file:
+
+def load_programs(file, inst_lib, min_len, max_len, pop_size):
+    with open(file, "r") as file:
         gen = int(file.readline().strip())
         hws = []
         i = 0

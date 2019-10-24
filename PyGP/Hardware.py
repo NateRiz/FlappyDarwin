@@ -147,7 +147,8 @@ class Hardware:
         for line in str.split("\n"):
             if not line.strip(): continue
 
-            line = line.split()
+            line = line.replace(" ",",")
+            line = line.split(",")
             inst_name = line[0]
             il = self.inst_lib.lib[inst_name]
             inst = il[0](*il[1:])
