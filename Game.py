@@ -5,35 +5,32 @@ from PyGP.Selection import *
 from PyGP.Mutation import mutate, recombination
 import CustomInstructions as c_inst
 import os
-from time import sleep
+from Settings import Settings
 import sys
 
 
 def main():
 
-    pop_size = 100
-    ticks_per_update = 100
-    min_program_length = 16
-    max_program_length = 80
-    num_tests = 5
-    hws = [Hardware(None, i, min_program_length, max_program_length) for i in range(pop_size)]
-    game = FlappyDarwin(hws, ticks_per_update, num_tests)
+    settings = Settings()
+    cmd_line_args_success = settings.update_command_line_args()
+    if not cmd_line_args_success:
+        return
+    print("Settings:"+"\n".join([f"{i} : {j}" for i,j in vars(settings).items()]))
+
+    hws = [Hardware(None, i, settings.min_program_length, settings.max_program_length) for i in range(settings.pop_size)]
+    game = FlappyDarwin(hws, settings.ticks_per_update, settings.num_tests if settings.selection == "lexicase" else 1)
     inst_lib = generate_inst_lib(game)
     for hw in hws:
         hw.inst_lib = inst_lib
 
     [hw.generate_program() for hw in hws]
-    #hws[0] = Hardware(inst_lib, 0, 8, 96)
-    #hws[0].load_program("PyGP/program.txt")
-    #hws[0].set_verbose()
-
     best_fitness = [0]
     gen = 0
 
-    if len(sys.argv) > 1:
+    if settings.save_file:
         if os.path.exists(os.path.join(os.getcwd(), "")):
-            print(F"LOADING FROM EXISTING SAVED GP FILE: {sys.argv[1]}")
-            hws, gen = load_programs(sys.argv[1], inst_lib, min_program_length, max_program_length, pop_size)
+            print(F"LOADING FROM EXISTING SAVED GP FILE: {settings.save_file}")
+            hws, gen = load_programs(inst_lib, settings)
             game.generation = gen
 
     while not game.QUIT_SIGNAL:
@@ -55,8 +52,12 @@ def main():
         copy_best = local_best.copy()
         copy_best.traits = 0
 
-        hws = lexicase(hws)
-        #hws = tournament(hws)
+        if settings.selection == "tournament":
+            hws = tournament(hws)
+        elif settings.selection == "lexicase":
+            hws = lexicase(hws)
+        else:
+            raise NotImplementedError(F"Invalid Selection Scheme: {settings.selection}")
         [mutate(hw) for hw in hws]
         recombination(hws)
         for i, hw in enumerate(hws):
@@ -66,8 +67,8 @@ def main():
         hws[0] = copy_best
         hws[0].traits = 0
 
-        if gen in {50, 100, 500, 1000, 1500, 2000, 2500, 3000}:
-            save_programs(gen, hws)
+        if gen in {50, 100, 500, 1500, 2500} or not gen % 1000:
+            save_programs(gen+1, hws)
 
 
 def save_programs(gen, hws):
@@ -78,8 +79,9 @@ def save_programs(gen, hws):
             file.write("\n#\n")
 
 
-def load_programs(file, inst_lib, min_len, max_len, pop_size):
-    with open(file, "r") as file:
+def load_programs(inst_lib, settings):
+    path = os.path.join(os.getcwd(), settings.save_file)
+    with open(path, "r") as file:
         gen = int(file.readline().strip())
         hws = []
         i = 0
@@ -87,21 +89,20 @@ def load_programs(file, inst_lib, min_len, max_len, pop_size):
         for line in file.readlines():
             line = line.strip()
             if line[0] == "#":
-                hws.append(Hardware(inst_lib, i, min_len, max_len))
+                hws.append(Hardware(inst_lib, i, settings.min_program_length, settings.max_program_length))
                 hws[-1].load_program_from_string("\n".join(build))
                 build.clear()
                 i += 1
-                assert i <= pop_size
+                assert i <= settings.pop_size
             else:
                 build.append(line)
 
         if build:
-            hws.append(Hardware(inst_lib, i, min_len, max_len))
+            hws.append(Hardware(inst_lib, i, settings.min_program_length, settings.max_program_length))
             hws[-1].load_program_from_string("\n".join(build))
             build.clear()
 
         return hws, gen
-
 
 
 def generate_inst_lib(game):

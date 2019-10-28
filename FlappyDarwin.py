@@ -95,12 +95,11 @@ class FlappyDarwin:
 
     def run_all_hardware(self):
         for i, hw in enumerate(self.hardware):
-            FlappyDarwin.run_single_hardware(hw)
+            self.run_single_hardware(hw)
 
-    @staticmethod
-    def run_single_hardware(hw):
+    def run_single_hardware(self, hw):
         ticks = 0
-        while ticks < 50 and not hw.EOP:
+        while ticks < self.ticks_per_update and not hw.EOP:
             hw.tick()
             ticks += 1
 
