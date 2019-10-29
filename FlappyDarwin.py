@@ -1,6 +1,7 @@
 import pygame
-from random import randint
-
+from random import randint, seed
+import os
+from time import time
 
 class Pipe:
     spawned = 0
@@ -35,16 +36,25 @@ class Bird:
 
 
 class FlappyDarwin:
-    def __init__(self, hardware=None, ticks_per_update=30, num_tests=1):
+    def __init__(self, hardware=None, ticks_per_update=30, num_tests=1, get_seed_fun=lambda: time()):
         pygame.init()
         self.WIDTH = 800
         self.HEIGHT = 600
+        self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         self.FPS = 60
-        self.evo_mode = False
+        self.evo_mode = 0  # 0 minimal, 1 presentation, 2 no drawing.
         self.GRAVITY = .981
         self.QUIT_SIGNAL = False
-        self.human_playing = hardware is None
+        self.get_seed_fun = get_seed_fun
+        seed(get_seed_fun())
 
+        ASSET_PATH = os.path.join(os.getcwd(), "Assets")
+        self.background = pygame.image.load(os.path.join(ASSET_PATH, "background.png")).convert()
+        self.pipe_up = pygame.image.load(os.path.join(ASSET_PATH, "pipe.png")).convert_alpha()
+        self.bird_img = pygame.image.load(os.path.join(ASSET_PATH, "bird.png")).convert_alpha()
+        self.pipe_down = pygame.transform.flip(self.pipe_up, 0, 1)
+
+        self.human_playing = hardware is None
         self.pipe_speed = 3
         self.score = 0
         self.generation = 0
@@ -53,7 +63,6 @@ class FlappyDarwin:
         self.num_tests = num_tests
         self.current_test = 0
 
-        self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         self.pipes = []
         self.next_pipe = None
         self.hardware = hardware
@@ -74,7 +83,7 @@ class FlappyDarwin:
 
             while not all([bird.dead for bird in self.birds]):
                 self.update()
-                if not self.evo_mode:
+                if self.evo_mode != 2:
                     self.draw()
                 self.poll()
                 if not self.human_playing:
@@ -93,7 +102,7 @@ class FlappyDarwin:
                     self.jump()
 
                 if event.key == pygame.K_RETURN:
-                    self.evo_mode = not self.evo_mode
+                    self.evo_mode = (self.evo_mode+1)%3
 
     def run_all_hardware(self):
         for i, hw in enumerate(self.hardware):
@@ -138,7 +147,10 @@ class FlappyDarwin:
         self.check_dead()
 
     def draw(self):
-        self.screen.fill((0, 0, 0))
+        if self.evo_mode == 0:
+            self.screen.fill((0, 0, 0))
+        elif self.evo_mode == 1:
+            self.screen.blit(self.background, (0,0))
 
         gen = self.font.render(F"Gen: {self.generation} Test {self.current_test}/{self.num_tests}", True,
                                (255, 255, 255))
@@ -151,18 +163,26 @@ class FlappyDarwin:
         self.screen.blit(alive, (8, 48 + score.get_size()[1] * 3))
 
         for pipe in self.pipes:
-            pygame.draw.rect(self.screen, (255, 255, 255), pipe.top, 3)
-            pygame.draw.rect(self.screen, (255, 255, 255), pipe.bot, 3)
+            if self.evo_mode == 0:
+                pygame.draw.rect(self.screen, (255, 255, 255), pipe.top, 3)
+                pygame.draw.rect(self.screen, (255, 255, 255), pipe.bot, 3)
+            elif self.evo_mode == 1:
+                self.screen.blit(self.pipe_down, (pipe.top.x, pipe.top.bottom - self.pipe_down.get_size()[1]))
+                self.screen.blit(self.pipe_up, pipe.bot)
 
-        pygame.draw.rect(self.screen, (255, 255, 0), self.next_pipe.top, 3)
-        pygame.draw.rect(self.screen, (255, 255, 0), self.next_pipe.bot, 3)
+        if self.evo_mode == 0:
+            pygame.draw.rect(self.screen, (255, 255, 0), self.next_pipe.top, 3)
+            pygame.draw.rect(self.screen, (255, 255, 0), self.next_pipe.bot, 3)
 
         for bird in self.birds:
             if not bird.dead:
-                color = (255, 0, 0)
-                if self.next_pipe.top.bottom <= bird.rect.centery <= self.next_pipe.bot.top:
-                    color = (0, 255, 0)
-                pygame.draw.rect(self.screen, color, bird.rect, 3)
+                if self.evo_mode == 0:
+                    color = (255, 0, 0)
+                    if self.next_pipe.top.bottom <= bird.rect.centery <= self.next_pipe.bot.top:
+                        color = (0, 255, 0)
+                    pygame.draw.rect(self.screen, color, bird.rect, 3)
+                elif self.evo_mode == 1:
+                    self.screen.blit(self.bird_img, bird.rect)
 
         pygame.display.flip()
 
@@ -203,6 +223,8 @@ class FlappyDarwin:
         self.score = 0
         self.frames = 1
         self.birds_alive = len(self.birds)
+        seed(self.get_seed_fun())
+
 
     def check_dead(self):
         for bird in self.birds:

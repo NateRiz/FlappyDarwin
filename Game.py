@@ -8,6 +8,7 @@ import CustomInstructions as c_inst
 import os
 from Settings import Settings, save_programs, load_programs
 from Analytics import Analytics
+from time import time
 
 
 def main():
@@ -21,7 +22,12 @@ def main():
     print("Settings:"+"\n".join([f"{i} : {j}" for i, j in vars(settings).items()]))
 
     hws = [Hardware(None, i, settings.min_program_length, settings.max_program_length) for i in range(settings.pop_size)]
-    game = FlappyDarwin(hws, settings.ticks_per_update, settings.num_tests if settings.selection == "lexicase" else 1)
+    game = FlappyDarwin(
+        hws,
+        settings.ticks_per_update,
+        settings.num_tests if settings.selection == "lexicase" else 1,
+        (lambda: 0) if settings.fitness == "novelty" else (lambda: time())
+        )
     inst_lib = generate_inst_lib(game)
     for hw in hws:
         hw.inst_lib = inst_lib
