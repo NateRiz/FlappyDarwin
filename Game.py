@@ -3,28 +3,32 @@ from PyGP.Hardware import InstructionLibrary
 import PyGP.Instructions as inst
 from PyGP.Selection import *
 from PyGP.Mutation import mutate, recombination
+from NoveltySelection import Novelty
 import CustomInstructions as c_inst
 import os
-from Settings import Settings
-import sys
+from Settings import Settings, save_programs, load_programs
+from Analytics import Analytics
 
 
 def main():
 
     settings = Settings()
+    analytics = Analytics()
+    novelty = Novelty()
     cmd_line_args_success = settings.update_command_line_args()
     if not cmd_line_args_success:
         return
-    print("Settings:"+"\n".join([f"{i} : {j}" for i,j in vars(settings).items()]))
+    print("Settings:"+"\n".join([f"{i} : {j}" for i, j in vars(settings).items()]))
 
     hws = [Hardware(None, i, settings.min_program_length, settings.max_program_length) for i in range(settings.pop_size)]
     game = FlappyDarwin(hws, settings.ticks_per_update, settings.num_tests if settings.selection == "lexicase" else 1)
     inst_lib = generate_inst_lib(game)
     for hw in hws:
         hw.inst_lib = inst_lib
-
     [hw.generate_program() for hw in hws]
+
     best_fitness = [0]
+    fitness_data = []
     gen = 0
 
     if settings.save_file:
@@ -43,17 +47,26 @@ def main():
             hw.cache_fitness(game.birds[i].fitness)
 
         local_best = max(hws, key=lambda hw: min(hw.fitness))
+        fitness_data.append(min(local_best.fitness))
         if min(local_best.fitness) > min(best_fitness):
             best_fitness = local_best.fitness
             print(local_best)
             print("Finished with fitness", local_best.fitness)
             print("____________________________")
 
+        if settings.fitness == "novelty":
+            dists = novelty.select([(bird.rect.x+bird.last_frame_alive, bird.rect.y) for bird in game.birds])
+            for i, hw in enumerate(hws):
+                hw.cache_fitness(dists[i])
+            assert settings.selection != "lexicase", "Cannot combine lexicase with novelty search."
+
         copy_best = local_best.copy()
         copy_best.traits = 0
 
         if settings.selection == "tournament":
             hws = tournament(hws)
+        elif settings.selection == "elite":
+            hws = elite(hws, len(hws)//2)
         elif settings.selection == "lexicase":
             hws = lexicase(hws)
         else:
@@ -69,40 +82,9 @@ def main():
 
         if gen in {50, 100, 500, 1500, 2500} or not gen % 1000:
             save_programs(gen+1, hws)
+            analytics.save(gen, fitness_data)
+            fitness_data.clear()
 
-
-def save_programs(gen, hws):
-    with open(F"gen{gen}.gp", "w") as file:
-        file.write(str(gen)+"\n")
-        for hw in hws:
-            file.write(hw.get_writable_program())
-            file.write("\n#\n")
-
-
-def load_programs(inst_lib, settings):
-    path = os.path.join(os.getcwd(), settings.save_file)
-    with open(path, "r") as file:
-        gen = int(file.readline().strip())
-        hws = []
-        i = 0
-        build = []
-        for line in file.readlines():
-            line = line.strip()
-            if line[0] == "#":
-                hws.append(Hardware(inst_lib, i, settings.min_program_length, settings.max_program_length))
-                hws[-1].load_program_from_string("\n".join(build))
-                build.clear()
-                i += 1
-                assert i <= settings.pop_size
-            else:
-                build.append(line)
-
-        if build:
-            hws.append(Hardware(inst_lib, i, settings.min_program_length, settings.max_program_length))
-            hws[-1].load_program_from_string("\n".join(build))
-            build.clear()
-
-        return hws, gen
 
 
 def generate_inst_lib(game):

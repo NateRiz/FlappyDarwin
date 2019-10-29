@@ -24,12 +24,14 @@ class Bird:
         self.velocity = self.VELOCITY_INITIAL
         self.dead = False
         self.last_pipe_gap_crossed = 0  # large reward once per pipe for crossing the empty gap
+        self.last_frame_alive = 0
 
     def restart_test(self):
         self.rect = pygame.rect.Rect(16, 450, 32, 32)
         self.velocity = self.VELOCITY_INITIAL
         self.dead = False
         self.last_pipe_gap_crossed = 0
+        self.last_frame_alive = 0
 
 
 class FlappyDarwin:
@@ -119,8 +121,9 @@ class FlappyDarwin:
                 del self.pipes[i]
 
         for bird in self.birds:
-            bird.velocity += self.GRAVITY
-            bird.rect.y += bird.velocity
+            if not bird.dead:
+                bird.velocity += self.GRAVITY
+                bird.rect.y += bird.velocity
 
         mid_y = (self.next_pipe.top.bottom + self.next_pipe.bot.top) // 2
         max_distance = (self.next_pipe.bot.top - self.next_pipe.top.bottom) // 2
@@ -167,18 +170,12 @@ class FlappyDarwin:
         pipe_horizontal_buffer = 600
 
         if not self.pipes:
-            """
-            self.pipes.append(Pipe(self.HEIGHT, self.WIDTH))
-            ht = 30
-            self.pipes[-1].top = pygame.rect.Rect(self.WIDTH // 2, 0, 100, ht)
-            hb = ht + 250
-            self.pipes[-1].bot = pygame.rect.Rect(self.WIDTH // 2, hb, 100, self.HEIGHT - hb)
-            """
-            self.pipes.append(Pipe(self.HEIGHT, self.WIDTH))
-            ht = 10 + ((self.HEIGHT - 270) * self.current_test // self.num_tests)
-            self.pipes[-1].top = pygame.rect.Rect(self.WIDTH // 2, 0, 100, ht)
-            hb = ht + 250
-            self.pipes[-1].bot = pygame.rect.Rect(self.WIDTH // 2, hb, 100, self.HEIGHT - hb)
+            if self.num_tests > 1:
+                self.pipes.append(Pipe(self.HEIGHT, self.WIDTH))
+                ht = 10 + ((self.HEIGHT - 270) * self.current_test // self.num_tests)
+                self.pipes[-1].top = pygame.rect.Rect(self.WIDTH // 2, 0, 100, ht)
+                hb = ht + 250
+                self.pipes[-1].bot = pygame.rect.Rect(self.WIDTH // 2, hb, 100, self.HEIGHT - hb)
 
         if not self.pipes or self.WIDTH - self.pipes[-1].top.right > pipe_horizontal_buffer:
             self.pipes.append(Pipe(self.HEIGHT, self.WIDTH))
@@ -225,4 +222,5 @@ class FlappyDarwin:
         assert not bird.dead
         bird.fitness[self.current_test] += self.frames
         bird.dead = True
+        bird.last_frame_alive = self.frames
         self.birds_alive-=1
