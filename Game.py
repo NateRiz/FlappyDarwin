@@ -3,9 +3,9 @@ from PyGP.Hardware import InstructionLibrary
 import PyGP.Instructions as inst
 from PyGP.Selection import *
 from PyGP.Mutation import mutate, recombination
-from NoveltySelection import Novelty
+from NoveltySelection import Novelty, save_novelty_archive, load_novelty_archive
 import CustomInstructions as c_inst
-import os
+from Utils import clamp
 from Settings import Settings, save_programs, load_programs
 from Analytics import Analytics
 from time import time
@@ -38,10 +38,10 @@ def main():
     gen = 0
 
     if settings.save_file:
-        if os.path.exists(os.path.join(os.getcwd(), "")):
-            print(F"LOADING FROM EXISTING SAVED GP FILE: {settings.save_file}")
-            hws, gen = load_programs(inst_lib, settings)
-            game.generation = gen
+        print(F"LOADING FROM EXISTING SAVED GP FILE: {settings.save_file}")
+        hws, gen = load_programs(inst_lib, settings)
+        game.generation = gen
+        load_novelty_archive(novelty)
 
     while not game.QUIT_SIGNAL:
         gen += 1
@@ -62,7 +62,7 @@ def main():
 
         if settings.fitness == "novelty":
             assert settings.selection != "lexicase", "Lexicase is not compatible with Novelty."
-            dists = novelty.select([(bird.rect.x+bird.last_frame_alive, bird.rect.y) for bird in game.birds])
+            dists = novelty.select([(bird.rect.x+bird.last_frame_alive, clamp(bird.rect.y, 0, game.HEIGHT)) for bird in game.birds])
             for i, hw in enumerate(hws):
                 hw.cache_fitness(dists[i])
 
@@ -90,6 +90,8 @@ def main():
             save_programs(gen+1, hws)
             analytics.save(gen, fitness_data)
             fitness_data.clear()
+            if settings.fitness == "novelty":
+                save_novelty_archive(novelty)
 
 
 
@@ -113,7 +115,7 @@ def generate_inst_lib(game):
     inst_lib.add_inst("GapTop", lambda hw, args: c_inst.get_gap_top(hw, args, game), False)
     inst_lib.add_inst("GapMid", lambda hw, args: c_inst.get_gap_midpoint(hw, args, game), False)
     inst_lib.add_inst("GapBot", lambda hw, args: c_inst.get_gap_bot(hw, args, game), False)
-    inst_lib.add_inst("SetGravity", lambda hw, args: c_inst.set_gravity(hw, args, game), False)
+    #inst_lib.add_inst("SetGravity", lambda hw, args: c_inst.set_gravity(hw, args, game), False)
     #inst_lib.add_inst("SetJump", lambda hw, args: c_inst.set_jump(hw, args, game), False)
     #inst_lib.add_inst("PipeX", lambda hw, args: c_inst.get_pipe_x(hw, args, game), False)
     #inst_lib.add_inst("Pixel", lambda hw, args: c_inst.check_pixel_collide(hw, args, game), False)

@@ -1,5 +1,5 @@
-from math import sqrt
-
+from Utils import distance
+import os
 
 class Novelty:
     def __init__(self):
@@ -17,6 +17,19 @@ class Novelty:
         print("archive len: ", len(self.archive))
         return dists
 
+def save_novelty_archive(novelty):
+    path = os.path.join(os.getcwd(), "archive.nvl")
+    with open(path, "w") as file:
+        for x, y in novelty.archive:
+            file.write(F"{x} {y}\n")
 
-def distance(a, b):
-    return abs(sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2))
+def load_novelty_archive(novelty):
+    path = os.path.join(os.getcwd(), "archive.nvl")
+    novelty.archive.clear()
+    with open(path, "r") as file:
+        for line in file.readlines():
+            line = line.strip().split()
+            if not line: continue
+            assert len(line) == 2, "Corrupt archive.nvl"
+            novelty.archive.add((int(line[0]), int(line[1])))
+
