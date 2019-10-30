@@ -39,6 +39,17 @@ def get_screen_height(hardware, args, game):
     return 0
 
 
+def set_gravity(hardware, args, game):
+    if args[0] < 0 or args[0] >= len(hardware.registers): return 0
+    game.birds[hardware.traits].set_gravity(hardware.registers[args[0]])
+    return 0
+
+def set_jump(hardware, args, game):
+    if args[0] < 0 or args[0] >= len(hardware.registers): return 0
+    game.birds[hardware.traits].set_jump(hardware.registers[args[0]])
+    return 0
+
+
 """
 import pygame
 def check_pixel_collide(hardware, args, game):

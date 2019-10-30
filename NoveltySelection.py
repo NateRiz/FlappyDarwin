@@ -5,7 +5,6 @@ class Novelty:
     def __init__(self):
         self.MIN_ARCHIVE_ADD_DISTANCE = 10.0
         self.archive = {(0, 0)}
-        print("X ISNT REAL. ADD FRAMES. DIST IS WRONG")
 
     def select(self, coords):
         dists = [sum([distance(a, b) for b in self.archive]) / len(self.archive) for a in coords]

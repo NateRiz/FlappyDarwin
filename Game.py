@@ -61,10 +61,10 @@ def main():
             print("____________________________")
 
         if settings.fitness == "novelty":
+            assert settings.selection != "lexicase", "Lexicase is not compatible with Novelty."
             dists = novelty.select([(bird.rect.x+bird.last_frame_alive, bird.rect.y) for bird in game.birds])
             for i, hw in enumerate(hws):
                 hw.cache_fitness(dists[i])
-            assert settings.selection != "lexicase", "Cannot combine lexicase with novelty search."
 
         copy_best = local_best.copy()
         copy_best.traits = 0
@@ -111,8 +111,10 @@ def generate_inst_lib(game):
     inst_lib.add_inst("Jump", lambda hw, __: c_inst.jump(hw, game), False)
     inst_lib.add_inst("BirdHeight", lambda hw, args: c_inst.get_bird_height(hw, args, game), False)
     inst_lib.add_inst("GapTop", lambda hw, args: c_inst.get_gap_top(hw, args, game), False)
-    inst_lib.add_inst("GapMid", lambda hw, args: c_inst.get_gap_midpoint(hw, args, game) , False)
+    inst_lib.add_inst("GapMid", lambda hw, args: c_inst.get_gap_midpoint(hw, args, game), False)
     inst_lib.add_inst("GapBot", lambda hw, args: c_inst.get_gap_bot(hw, args, game), False)
+    inst_lib.add_inst("SetGravity", lambda hw, args: c_inst.set_gravity(hw, args, game), False)
+    #inst_lib.add_inst("SetJump", lambda hw, args: c_inst.set_jump(hw, args, game), False)
     #inst_lib.add_inst("PipeX", lambda hw, args: c_inst.get_pipe_x(hw, args, game), False)
     #inst_lib.add_inst("Pixel", lambda hw, args: c_inst.check_pixel_collide(hw, args, game), False)
     #inst_lib.add_inst("ScreenHeight", lambda hw, args: c_inst.get_screen_height(hw, args, game), False)

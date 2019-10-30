@@ -26,6 +26,7 @@ class Bird:
         self.dead = False
         self.last_pipe_gap_crossed = 0  # large reward once per pipe for crossing the empty gap
         self.last_frame_alive = 0
+        self.gravity = .981
 
     def restart_test(self):
         self.rect = pygame.rect.Rect(16, 450, 32, 32)
@@ -33,6 +34,13 @@ class Bird:
         self.dead = False
         self.last_pipe_gap_crossed = 0
         self.last_frame_alive = 0
+        self.gravity = .981
+
+    def set_gravity(self, g):
+        self.gravity = g
+
+    def set_jump(self, j):
+        self.VELOCITY_INITIAL = j
 
 
 class FlappyDarwin:
@@ -43,7 +51,6 @@ class FlappyDarwin:
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         self.FPS = 60
         self.evo_mode = 0  # 0 minimal, 1 presentation, 2 no drawing.
-        self.GRAVITY = .981
         self.QUIT_SIGNAL = False
         self.get_seed_fun = get_seed_fun
         seed(get_seed_fun())
@@ -131,7 +138,7 @@ class FlappyDarwin:
 
         for bird in self.birds:
             if not bird.dead:
-                bird.velocity += self.GRAVITY
+                bird.velocity += bird.gravity
                 bird.rect.y += bird.velocity
 
         mid_y = (self.next_pipe.top.bottom + self.next_pipe.bot.top) // 2
