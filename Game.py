@@ -1,5 +1,5 @@
 from FlappyDarwin import FlappyDarwin
-from PyGP.Hardware import InstructionLibrary
+from PyGP.Hardware import InstructionLibrary, Hardware
 import PyGP.Instructions as inst
 from PyGP.Selection import *
 from PyGP.Mutation import mutate, recombination
@@ -75,6 +75,8 @@ def main():
             hws = elite(hws, len(hws)//2)
         elif settings.selection == "lexicase":
             hws = lexicase(hws)
+        elif settings.selection == "roulette":
+            hws = roulette(hws)
         else:
             raise NotImplementedError(F"Invalid Selection Scheme: {settings.selection}")
         [mutate(hw) for hw in hws]

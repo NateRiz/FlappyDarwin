@@ -26,7 +26,7 @@ class Settings:
         self.min_program_length = 16
         self.max_program_length = 64
         self.num_tests = 5
-        self.selection = "tournament"
+        self.selection = "roulette"
         self.fitness = "distance"
         self.save_file = ""
         self.analytics_enabled = True
@@ -44,7 +44,7 @@ class Settings:
         if original_num_settings != len(self.__dict__):
             print(usage)
             return False
-        assert self.selection in ["tournament", "elite", "lexicase"], F"Incorrect selection scheme: {self.selection}"
+        assert self.selection in ["tournament", "elite", "lexicase", "roulette"], F"Incorrect selection scheme: {self.selection}"
         assert self.fitness in ["distance", "novelty"], F"Incorrect fitness function: {self.fitness}"
         return True
 
