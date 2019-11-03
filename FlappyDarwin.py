@@ -69,6 +69,7 @@ class FlappyDarwin:
         self.frames = 1
         self.num_tests = num_tests
         self.current_test = 0
+        self.gen_finished_test = -1
 
         self.pipes = []
         self.next_pipe = None
@@ -152,6 +153,11 @@ class FlappyDarwin:
                     bird.fitness[self.current_test] += 50
 
         self.check_dead()
+
+        last_test = 3
+        if self.gen_finished_test == -1 and self.score >= last_test:
+            self.gen_finished_test = self.generation
+
 
     def draw(self):
         if self.evo_mode == 0:
@@ -240,11 +246,11 @@ class FlappyDarwin:
             if bird.rect.bottom >= self.HEIGHT or bird.rect.top <= 0:
                 self.kill_bird(bird)
 
-        if self.next_pipe.top.left <= self.birds[0].rect.right or self.next_pipe.top.right <= self.birds[0].rect.left:
+        if self.next_pipe.top.left <= self.birds[0].rect.right and self.next_pipe.top.right >= self.birds[0].rect.left:
             for bird in self.birds:
                 if bird.dead:
                     continue
-                if self.next_pipe.top.colliderect(bird.rect) or self.next_pipe.bot.colliderect(bird.rect):
+                if bird.rect.bottom >= self.next_pipe.bot.top or bird.rect.top <= self.next_pipe.top.bottom:
                     self.kill_bird(bird)
 
     def kill_bird(self, bird):
@@ -252,4 +258,4 @@ class FlappyDarwin:
         bird.fitness[self.current_test] += self.frames
         bird.dead = True
         bird.last_frame_alive = self.frames
-        self.birds_alive-=1
+        self.birds_alive -= 1

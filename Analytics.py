@@ -8,15 +8,15 @@ class Analytics:
     def save(self, gen, data):
         path = os.path.join(os.getcwd(), self.file_name)
         if not os.path.exists(path):
-            assert (len(data) == gen)
+            assert (len(data) == gen-1), F"Data size: {len(data)}, Gen {gen}"
             open(self.file_name, "w").close()
-        self._append_data(gen, data)
+        self._append_data(gen-1, data)
 
     def _append_data(self, gen, new_data):
         with open(self.file_name, "r") as file:
             data = [float(x.strip()) for x in file.readlines() if x.strip()]
 
-        assert len(data) >= gen - len(new_data)
+        assert len(data) >= gen - len(new_data), F"Prev Data Size:{len(data)} -- Gen {gen},  New Amt of Data:{len(new_data)}"
         del data[gen-len(new_data)::]
 
         with open(self.file_name, "w") as file:

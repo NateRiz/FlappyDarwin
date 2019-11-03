@@ -49,9 +49,10 @@ class Settings:
         return True
 
 
-def save_programs(gen, hws):
+def save_programs(gen, hws, gen_finished_test):
     with open(F"gen{gen}.gp", "w") as file:
         file.write(str(gen)+"\n")
+        file.write(str(gen_finished_test)+"\n")
         for hw in hws:
             file.write(hw.get_writable_program())
             file.write("\n#\n")
@@ -61,6 +62,7 @@ def load_programs(inst_lib, settings):
     path = os.path.join(os.getcwd(), settings.save_file)
     with open(path, "r") as file:
         gen = int(file.readline().strip())
+        gen_finished_test = int(file.readline().strip())
         hws = []
         i = 0
         build = []
@@ -80,5 +82,5 @@ def load_programs(inst_lib, settings):
             hws[-1].load_program_from_string("\n".join(build))
             build.clear()
 
-        return hws, gen
+        return hws, gen, gen_finished_test
 

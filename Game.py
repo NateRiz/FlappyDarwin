@@ -1,4 +1,5 @@
 from FlappyDarwin import FlappyDarwin
+from FlappyDarwin_NO_PYGAME import FlappyDarwin
 from PyGP.Hardware import InstructionLibrary, Hardware
 import PyGP.Instructions as inst
 from PyGP.Selection import *
@@ -35,16 +36,17 @@ def main():
 
     best_fitness = [0]
     fitness_data = []
-    gen = 0
+    gen = 1
 
     if settings.save_file:
         print(F"LOADING FROM EXISTING SAVED GP FILE: {settings.save_file}")
-        hws, gen = load_programs(inst_lib, settings)
+        hws, gen, gen_finished_test = load_programs(inst_lib, settings)
         game.generation = gen
-        load_novelty_archive(novelty)
+        game.gen_finished_test = gen_finished_test
+        if settings.fitness == "novelty":
+            load_novelty_archive(novelty)
 
     while not game.QUIT_SIGNAL:
-        gen += 1
         print(F"Generation: {gen}")
         game.set_hardware(hws)
         game.start()
@@ -88,12 +90,16 @@ def main():
         hws[0] = copy_best
         hws[0].traits = 0
 
-        if gen in {50, 100, 500, 1500, 2500} or not gen % 1000:
-            save_programs(gen+1, hws)
+        gen += 1
+
+        if gen in {10, 50, 100, 250, 500, 1500, 2500} or not gen % 1000:
+            save_programs(gen, hws, game.gen_finished_test)
             analytics.save(gen, fitness_data)
             fitness_data.clear()
             if settings.fitness == "novelty":
                 save_novelty_archive(novelty)
+
+
 
 
 
