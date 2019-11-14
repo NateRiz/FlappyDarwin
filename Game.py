@@ -13,7 +13,6 @@ from time import time
 
 
 def main():
-
     settings = Settings()
     analytics = Analytics()
     novelty = Novelty()
