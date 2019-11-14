@@ -5,13 +5,10 @@ from time import time
 
 
 class Pipe:
-    spawned = 0
-
     def __init__(self, height, width, moving_pipes=False):
         self.passed = False
         self.pipe_speed = 3
-        Pipe.spawned += 1
-        gap_size = max(0, 250 - 10 * Pipe.spawned)
+        gap_size = 256
         ht = randint(0, height - gap_size)
         self.top = pygame.rect.Rect(width, 0, 100, ht)
         self.moving_pipes = moving_pipes
@@ -247,7 +244,6 @@ class FlappyDarwin:
     def restart_test(self):
         self.pipes.clear()
         self.next_pipe = None
-        Pipe.spawned = 0
         self.score = 0
         self.frames = 1
         [bird.restart_test() for bird in self.birds]
@@ -257,7 +253,6 @@ class FlappyDarwin:
         self.pipes.clear()
         self.next_pipe = None
         self.birds = [Bird(self.num_tests) for _ in range(self.pop_size)]
-        Pipe.spawned = 0
         self.score = 0
         self.frames = 1
         self.birds_alive = len(self.birds)

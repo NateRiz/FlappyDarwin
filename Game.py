@@ -1,4 +1,4 @@
-from FlappyDarwin import FlappyDarwin
+#from FlappyDarwin import FlappyDarwin
 from FlappyDarwin_NO_PYGAME import FlappyDarwin
 from PyGP.Hardware import InstructionLibrary, Hardware
 import PyGP.Instructions as inst
