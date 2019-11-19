@@ -54,7 +54,7 @@ def main():
             hw.cache_fitness(game.birds[i].fitness)
 
         local_best = max(hws, key=lambda hw: min(hw.fitness))
-        fitness_data.append(min(local_best.fitness))
+        fitness_data.append(sum(local_best.fitness)/len(local_best.fitness))
         if min(local_best.fitness) > min(best_fitness):
             best_fitness = local_best.fitness
             print(local_best)
